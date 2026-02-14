@@ -1,0 +1,31 @@
+# Moltbook Observatory — Cursor Rules
+
+This repository implements a public-only integrity observatory for agent-centric social platforms. Maintain a security-first stance (no side effects; strict rate limiting; least privilege; do not touch DMs), and an epistemically conservative stance (scores are risk signals, not authorship verdicts). Prefer reproducibility over cleverness: immutable raw data, versioned methodology, deterministic transforms, and explicit assumptions.
+
+## Non-negotiable constraints (hard rules)
+- Read-only I/O against the platform: NEVER introduce POST/PUT/PATCH/DELETE calls, “vote”, “comment”, “publish”, or any mutating endpoint, even behind flags.
+- Public data only: NEVER access or store DMs, private feeds, or any content requiring elevated permissions beyond what is strictly necessary for public observability.
+- Secrets hygiene: NEVER commit secrets; NEVER log Authorization headers, cookies, tokens, or full request headers. Redact sensitive fields in logs by default.
+
+## Data handling
+- Data minimization: store only what is necessary for reproducibility and analysis; avoid collecting user PII beyond what is already public and essential.
+- Raw storage is append-only and immutable; derived tables are deterministic transforms from raw.
+- Retention and exports must be explicit and documented (what leaves the machine, and why).
+
+## Code style
+Python 3.11+, type hints throughout, conservative error handling, structured logging, and configuration via environment variables (no magic constants). When generating new code: prefer dataclasses over dicts, async/await for I/O, and explicit exception handling over broad try/except. Every public function should have a docstring that states its invariants and failure modes.
+
+## Operational behavior
+When in doubt: log and continue rather than fail fast; treat all API responses (including errors) as first-class observability signals; never assume endpoint behavior without empirical verification.
+
+Hard-fail only when:
+- a change would violate non-negotiable constraints (side effects, DMs/private data, secret leakage),
+- persistence integrity is at risk (corrupting raw store, writing outside repo paths),
+- configuration is missing or invalid in a way that could cause unsafe behavior.
+
+## Testing philosophy
+Test invariants and contracts (schemas, idempotency, retry behavior, rate limits), not implementation details. Prefer black-box contract tests for endpoints and schema presence checks for stored payloads.
+
+## Documentation
+Documentation must remain a primary artifact: explain why decisions exist, what is out of scope, and which confounders apply. Any new feature must update methodology with assumptions and known failure modes.
+
