@@ -102,3 +102,20 @@ The collector is designed to be non-invasive: it performs no side effects, avoid
 
 ## License
 MIT
+
+# Moltbook Observatory (WIP)
+
+## Status: Architecture Complete, Implementation In Progress
+
+✅ Completed:
+- System architecture
+- Data collection pipeline
+- Methodology documentation
+- Makefile automation
+
+🚧 In Progress:
+- Feature extraction pipeline
+- Weekly reporting system
+
+This is a work-in-progress portfolio piece demonstrating 
+MLOps/observability system design.
