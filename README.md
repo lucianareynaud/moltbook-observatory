@@ -55,17 +55,24 @@ make collect
 sqlite3 data/observatory.sqlite "SELECT COUNT(*) FROM raw_events;"
 ```
 
-### Generate reports
+### Analysis & reporting
 
 ```bash
+# Extract features only (for inspection)
+make features
+
 # Generate report for previous complete week
 make report
 
 # Generate report for current week
 make report-current
 
+# Build static site index from all reports
+make build-site
+
 # View generated artifacts
 ls -lh output/$(date -u +"%Y-W%V")/
+open output/site/index.html  # or xdg-open on Linux
 ```
 
 ### Development workflow

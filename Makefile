@@ -27,9 +27,11 @@ help:
 	@echo "  Data Collection:"
 	@echo "    make collect        Run collector once"
 	@echo ""
-	@echo "  Reporting:"
+	@echo "  Analysis & Reporting:"
+	@echo "    make features       Extract features for current week"
 	@echo "    make report         Generate weekly report (previous week)"
 	@echo "    make report-current Generate report for current week"
+	@echo "    make build-site     Build static site index from all reports"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    make clean          Remove generated files"
@@ -67,7 +69,11 @@ check: lint
 collect:
 	@scripts/collect.sh
 
-# Reporting targets
+# Analysis & reporting targets
+.PHONY: features
+features:
+	@scripts/features.sh
+
 .PHONY: report
 report:
 	@scripts/report.sh
@@ -76,11 +82,16 @@ report:
 report-current:
 	@scripts/report.sh --current
 
+.PHONY: build-site
+build-site:
+	@scripts/build-site.sh
+
 # Cleanup targets
 .PHONY: clean
 clean:
 	@echo "[make] Cleaning generated files..."
-	@rm -rf output/*/
+	@rm -rf output/20*/
+	@rm -rf output/site/
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
