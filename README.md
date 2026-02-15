@@ -16,35 +16,78 @@ The system is split into two planes. The **collection plane** fetches public end
 All analytical outputs are deterministically derivable from stored raw events and the code in this repository, subject to the volatility of public endpoints. Feature definitions and score weights should be versioned once introduced.
 
 ## Quickstart
-Create a virtual environment, install requirements, then define the base URL and endpoint specs.
+
+### Setup (one-time)
 
 ```bash
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
+# Create virtual environment and install dependencies
+make setup
+
+# Or manually:
+make venv
+make install
 ```
 
-Create your endpoint configuration (example only; do not assume these paths exist in production):
+### Configure endpoints
+
+Set environment variables for the platform API you're observing:
 
 ```bash
 export MOLTBOOK_BASE_URL="https://www.moltbook.com"
 export MOLTBOOK_ENDPOINTS_JSON='[
-  {"name":"global_hot","path_template":"/api/v1/posts?sort=hot&limit={limit}","params":{"limit":25}}
+  {"name":"posts_hot","path_template":"/api/v1/posts?sort=hot&limit={limit}","params":{"limit":25}}
 ]'
-python -m collector.main
 ```
 
-If an endpoint requires authentication, set `MOLTBOOK_AUTH_BEARER`:
+If authentication is required:
 
 ```bash
 export MOLTBOOK_AUTH_BEARER="YOUR_TOKEN_HERE"
-python -m collector.main
 ```
 
-Validate that data were stored:
+### Collect data
 
 ```bash
+# Run collector once
+make collect
+
+# Validate data were stored
 sqlite3 data/observatory.sqlite "SELECT COUNT(*) FROM raw_events;"
+```
+
+### Generate reports
+
+```bash
+# Generate report for previous complete week
+make report
+
+# Generate report for current week
+make report-current
+
+# View generated artifacts
+ls -lh output/$(date -u +"%Y-W%V")/
+```
+
+### Development workflow
+
+```bash
+# Format code
+make format
+
+# Run linters
+make lint
+
+# Check formatting (CI-friendly)
+make check
+
+# Clean generated files
+make clean
+```
+
+### All available commands
+
+```bash
+make help
 ```
 
 ## Safety

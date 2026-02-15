@@ -55,7 +55,9 @@ def parse_iso_week(week_str: str) -> tuple[str, str]:
 
         # Calculate target week's Monday
         target_monday = week_1_monday + timedelta(weeks=week - 1)
-        target_sunday = target_monday + timedelta(days=6, hours=23, minutes=59, seconds=59)
+        target_sunday = target_monday + timedelta(
+            days=6, hours=23, minutes=59, seconds=59
+        )
 
         return (
             target_monday.isoformat().replace("+00:00", "Z"),
@@ -127,7 +129,9 @@ def main() -> int:
         print(f"[reports] ERROR: Database not found at {sqlite_path}", file=sys.stderr)
         return 1
 
-    print(f"[reports] Extracting features for {week_id} ({week_start_utc} to {week_end_utc})...")
+    print(
+        f"[reports] Extracting features for {week_id} ({week_start_utc} to {week_end_utc})..."
+    )
 
     try:
         # Extract features
@@ -150,19 +154,21 @@ def main() -> int:
         report_path.write_text(report_md, encoding="utf-8")
         dashboard_path.write_text(dashboard_html, encoding="utf-8")
 
-        print(f"[reports] ✓ Generated artifacts:")
+        print("[reports] ✓ Generated artifacts:")
         print(f"[reports]   - {report_path}")
         print(f"[reports]   - {dashboard_path}")
-        print(f"[reports]")
-        print(f"[reports] Summary:")
+        print("[reports]")
+        print("[reports] Summary:")
         print(f"[reports]   Total events: {weekly_features.payload_stats.total_events}")
-        print(f"[reports]   Total requests: {weekly_features.collection_health.total_requests}")
+        print(
+            f"[reports]   Total requests: {weekly_features.collection_health.total_requests}"
+        )
         print(f"[reports]   Availability: {weekly_scores.overall_availability:.1%}")
         print(f"[reports]   Anomalies: {len(weekly_scores.anomalies)}")
 
         if weekly_scores.anomalies:
-            print(f"[reports]")
-            print(f"[reports] Anomalies detected:")
+            print("[reports]")
+            print("[reports] Anomalies detected:")
             for anomaly in weekly_scores.anomalies:
                 print(f"[reports]   [{anomaly.severity.upper()}] {anomaly.message}")
 
@@ -171,6 +177,7 @@ def main() -> int:
     except Exception as e:
         print(f"[reports] ERROR: {type(e).__name__}: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
         return 1
 

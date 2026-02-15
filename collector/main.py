@@ -32,6 +32,7 @@ class EndpointSpec:
       - "/api/public/submolt/{name}/posts?limit={limit}"
       - "/api/public/user/{user_id}/activity?limit={limit}"
     """
+
     name: str
     path_template: str
     params: Dict[str, Any]
@@ -58,6 +59,7 @@ class RateLimiter:
     and easier to audit than scattered sleeps. For distributed collection, replace with
     a shared token bucket.
     """
+
     def __init__(self, rps_per_host: float) -> None:
         if rps_per_host <= 0:
             raise ValueError("rps_per_host must be > 0")
@@ -123,7 +125,9 @@ class SQLiteStore:
         error: Optional[str],
     ) -> None:
         ts = utc_now_iso()
-        key = sha256_hex(f"{ts}|{endpoint_name}|{url}|{attempt}|{status_code}|{error or ''}")
+        key = sha256_hex(
+            f"{ts}|{endpoint_name}|{url}|{attempt}|{status_code}|{error or ''}"
+        )
         with self._connect() as conn:
             conn.execute(
                 """
@@ -134,7 +138,9 @@ class SQLiteStore:
                 (key, ts, endpoint_name, url, status_code, elapsed_ms, attempt, error),
             )
 
-    def store_payload(self, endpoint_name: str, url: str, payload: Dict[str, Any]) -> None:
+    def store_payload(
+        self, endpoint_name: str, url: str, payload: Dict[str, Any]
+    ) -> None:
         ts = utc_now_iso()
         payload_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         key = sha256_hex(f"{endpoint_name}|{url}|{ts}|{sha256_hex(payload_json)}")
@@ -158,7 +164,9 @@ def build_url(base_url: str, path_template: str, params: Dict[str, Any]) -> str:
     return base_url + path
 
 
-def compute_backoff_s(attempt: int, base: float, cap: float, jitter_ratio: float) -> float:
+def compute_backoff_s(
+    attempt: int, base: float, cap: float, jitter_ratio: float
+) -> float:
     exp = min(cap, base * (2 ** max(0, attempt - 1)))
     jitter = exp * jitter_ratio * random.random()
     return exp + jitter
@@ -192,13 +200,21 @@ async def fetch_json_with_retries(
 
             if status_code in (401, 403):
                 err = f"auth_status:{status_code}"
-                store.log_request(endpoint_name, url, status_code, elapsed_ms, attempt, err)
+                store.log_request(
+                    endpoint_name, url, status_code, elapsed_ms, attempt, err
+                )
                 return None
 
             if status_code == 429 or 500 <= status_code <= 599:
                 err = f"retryable_status:{status_code}"
-                store.log_request(endpoint_name, url, status_code, elapsed_ms, attempt, err)
-                await asyncio.sleep(compute_backoff_s(attempt, cfg.backoff_base_s, cfg.backoff_cap_s, cfg.jitter_ratio))
+                store.log_request(
+                    endpoint_name, url, status_code, elapsed_ms, attempt, err
+                )
+                await asyncio.sleep(
+                    compute_backoff_s(
+                        attempt, cfg.backoff_base_s, cfg.backoff_cap_s, cfg.jitter_ratio
+                    )
+                )
                 continue
 
             resp.raise_for_status()
@@ -207,22 +223,32 @@ async def fetch_json_with_retries(
                 data = resp.json()
             except Exception as je:
                 err = f"json_parse:{type(je).__name__}"
-                store.log_request(endpoint_name, url, status_code, elapsed_ms, attempt, err)
+                store.log_request(
+                    endpoint_name, url, status_code, elapsed_ms, attempt, err
+                )
                 return None
 
-            store.log_request(endpoint_name, url, status_code, elapsed_ms, attempt, None)
+            store.log_request(
+                endpoint_name, url, status_code, elapsed_ms, attempt, None
+            )
             return data
 
         except (httpx.TimeoutException, httpx.NetworkError) as e:
             elapsed_ms = int((time.monotonic() - t0) * 1000)
             err = f"network:{type(e).__name__}"
             store.log_request(endpoint_name, url, status_code, elapsed_ms, attempt, err)
-            await asyncio.sleep(compute_backoff_s(attempt, cfg.backoff_base_s, cfg.backoff_cap_s, cfg.jitter_ratio))
+            await asyncio.sleep(
+                compute_backoff_s(
+                    attempt, cfg.backoff_base_s, cfg.backoff_cap_s, cfg.jitter_ratio
+                )
+            )
 
         except httpx.HTTPStatusError as e:
             elapsed_ms = int((time.monotonic() - t0) * 1000)
             err = f"http_status:{e.response.status_code}"
-            store.log_request(endpoint_name, url, e.response.status_code, elapsed_ms, attempt, err)
+            store.log_request(
+                endpoint_name, url, e.response.status_code, elapsed_ms, attempt, err
+            )
             return None
 
         except Exception as e:
@@ -243,7 +269,9 @@ def load_config_from_env() -> CollectorConfig:
 
     return CollectorConfig(
         base_url=base_url,
-        user_agent=os.environ.get("MOLTBOOK_USER_AGENT", "moltbook-observatory/0.1 (public-only)"),
+        user_agent=os.environ.get(
+            "MOLTBOOK_USER_AGENT", "moltbook-observatory/0.1 (public-only)"
+        ),
         timeout_s=float(os.environ.get("MOLTBOOK_TIMEOUT_S", "20")),
         max_concurrency=int(os.environ.get("MOLTBOOK_MAX_CONCURRENCY", "4")),
         rps_per_host=float(os.environ.get("MOLTBOOK_RPS_PER_HOST", "1.0")),
@@ -259,7 +287,9 @@ def load_config_from_env() -> CollectorConfig:
 def load_endpoint_specs_from_env() -> List[EndpointSpec]:
     raw = os.environ.get("MOLTBOOK_ENDPOINTS_JSON", "").strip()
     if not raw:
-        raise RuntimeError("Missing MOLTBOOK_ENDPOINTS_JSON (JSON list of endpoint specs)")
+        raise RuntimeError(
+            "Missing MOLTBOOK_ENDPOINTS_JSON (JSON list of endpoint specs)"
+        )
     try:
         items = json.loads(raw)
         specs: List[EndpointSpec] = []
@@ -288,10 +318,13 @@ async def run_once(cfg: CollectorConfig, specs: List[EndpointSpec]) -> None:
         headers["Authorization"] = f"Bearer {cfg.auth_bearer}"
 
     async with httpx.AsyncClient(timeout=cfg.timeout_s, headers=headers) as client:
+
         async def worker(spec: EndpointSpec) -> Tuple[str, Optional[Dict[str, Any]]]:
             url = build_url(cfg.base_url, spec.path_template, spec.params)
             async with sem:
-                data = await fetch_json_with_retries(client, limiter, cfg, spec.name, url, store)
+                data = await fetch_json_with_retries(
+                    client, limiter, cfg, spec.name, url, store
+                )
                 if data is not None:
                     store.store_payload(spec.name, url, data)
                 return (spec.name, data)
@@ -299,7 +332,9 @@ async def run_once(cfg: CollectorConfig, specs: List[EndpointSpec]) -> None:
         results = await asyncio.gather(*(worker(s) for s in specs))
         ok = sum(1 for _, data in results if data is not None)
         total = len(results)
-        print(f"[collector] completed: {ok}/{total} endpoints stored into {cfg.sqlite_path}")
+        print(
+            f"[collector] completed: {ok}/{total} endpoints stored into {cfg.sqlite_path}"
+        )
 
 
 def main() -> None:

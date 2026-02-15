@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -16,6 +15,7 @@ class CollectionHealth:
       - total_requests >= successful_requests
       - latency_p50_ms <= latency_p95_ms <= latency_p99_ms
     """
+
     total_requests: int
     successful_requests: int  # status_code 2xx, no error
     failed_requests: int
@@ -35,6 +35,7 @@ class PayloadStats:
     Does not assume any particular schema; focuses on structural properties
     that are available regardless of the platform's API structure.
     """
+
     total_events: int
     events_by_endpoint: Dict[str, int]  # endpoint_name -> count
     events_over_time: List[Tuple[str, int]]  # (ISO date, count) sorted chronologically
@@ -51,6 +52,7 @@ class WeeklyFeatures:
     All fields are deterministic functions of raw_events and request_log
     within the specified time range.
     """
+
     week_id: str  # e.g., "2026-W07"
     week_start_utc: str  # ISO timestamp
     week_end_utc: str  # ISO timestamp
@@ -64,7 +66,9 @@ def _parse_iso_timestamp(ts_str: str) -> datetime:
     return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
 
 
-def _compute_percentile(sorted_values: List[float], percentile: float) -> Optional[float]:
+def _compute_percentile(
+    sorted_values: List[float], percentile: float
+) -> Optional[float]:
     """
     Compute percentile from sorted list of values.
 
@@ -131,14 +135,22 @@ def extract(
             if row["attempt"] > 1:
                 retried_requests += 1
 
-            if row["error"] is None and row["status_code"] and 200 <= row["status_code"] < 300:
+            if (
+                row["error"] is None
+                and row["status_code"]
+                and 200 <= row["status_code"] < 300
+            ):
                 successful_requests += 1
             else:
                 failed_requests += 1
 
             if row["error"]:
-                error_type = row["error"].split(":")[0]  # e.g., "network" from "network:TimeoutException"
-                error_distribution[error_type] = error_distribution.get(error_type, 0) + 1
+                error_type = row["error"].split(":")[
+                    0
+                ]  # e.g., "network" from "network:TimeoutException"
+                error_distribution[error_type] = (
+                    error_distribution.get(error_type, 0) + 1
+                )
 
             if row["elapsed_ms"] is not None:
                 latencies.append(float(row["elapsed_ms"]))

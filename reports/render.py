@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, Dict
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 
 from reports.features import WeeklyFeatures
 from reports.scoring import WeeklyScores
@@ -63,7 +62,6 @@ def _prepare_context(features: WeeklyFeatures, scores: WeeklyScores) -> Dict[str
         "week_end": features.week_end_utc,
         "extracted_at": features.extracted_at_utc,
         "scored_at": scores.scored_at_utc,
-
         # Collection health
         "total_requests": health.total_requests,
         "successful_requests": health.successful_requests,
@@ -74,7 +72,6 @@ def _prepare_context(features: WeeklyFeatures, scores: WeeklyScores) -> Dict[str
         "latency_p95_ms": health.latency_p95_ms,
         "latency_p99_ms": health.latency_p99_ms,
         "endpoints_seen": health.endpoints_seen,
-
         # Payload stats
         "total_events": stats.total_events,
         "events_by_endpoint": stats.events_by_endpoint,
@@ -84,14 +81,12 @@ def _prepare_context(features: WeeklyFeatures, scores: WeeklyScores) -> Dict[str
         "payload_size_p50": stats.payload_size_bytes_p50,
         "payload_size_p95": stats.payload_size_bytes_p95,
         "unique_urls": stats.unique_urls_collected,
-
         # Scores
         "availability_by_endpoint": scores.availability_by_endpoint,
         "overall_availability": scores.overall_availability,
         "volume_change_pct": scores.volume_change_pct,
         "anomalies": scores.anomalies,
         "anomalies_by_severity": anomalies_by_severity,
-
         # Helper functions
         "format_bytes": _format_bytes,
         "format_ms": _format_ms,
