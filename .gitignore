@@ -12,5 +12,6 @@ build/
 data/*.sqlite*
 data/*.db
 .env
+output/*/
 .DS_Store
 .vscode/

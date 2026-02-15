@@ -1,0 +1,158 @@
+# Moltbook Observatory — {{ week_id }} Report
+
+**Reporting Period:** {{ week_start }} to {{ week_end }}
+**Generated:** {{ extracted_at }}
+**Methodology Version:** 0.1.0
+
+---
+
+## Executive Summary
+
+- **Total Events Collected:** {{ total_events }}
+- **Collection Availability:** {{ format_pct(overall_availability) }}
+- **Unique Endpoints:** {{ endpoints_seen|length }}
+- **Anomalies Detected:** {{ anomalies|length }}
+
+{% if anomalies_by_severity.critical %}
+### 🔴 Critical Alerts
+{% for anomaly in anomalies_by_severity.critical %}
+- **{{ anomaly.message }}**
+  {% if anomaly.context %}
+  - Context: {{ anomaly.context }}
+  {% endif %}
+{% endfor %}
+{% endif %}
+
+{% if anomalies_by_severity.warning %}
+### ⚠️  Warnings
+{% for anomaly in anomalies_by_severity.warning %}
+- {{ anomaly.message }}
+  {% if anomaly.context %}
+  - Context: {{ anomaly.context }}
+  {% endif %}
+{% endfor %}
+{% endif %}
+
+---
+
+## Collection Health
+
+### Request Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Requests | {{ total_requests }} |
+| Successful | {{ successful_requests }} ({{ format_pct(successful_requests / total_requests if total_requests > 0 else 0) }}) |
+| Failed | {{ failed_requests }} |
+| Retried | {{ retried_requests }} |
+
+### Latency Profile
+
+{% if latency_p50_ms is not none %}
+| Percentile | Latency |
+|------------|---------|
+| p50 (median) | {{ format_ms(latency_p50_ms) }} |
+| p95 | {{ format_ms(latency_p95_ms) }} |
+| p99 | {{ format_ms(latency_p99_ms) }} |
+{% else %}
+_No latency data available for this period._
+{% endif %}
+
+### Error Distribution
+
+{% if error_distribution %}
+| Error Type | Count |
+|------------|-------|
+{% for error_type, count in error_distribution.items() %}
+| {{ error_type }} | {{ count }} |
+{% endfor %}
+{% else %}
+_No errors recorded._
+{% endif %}
+
+### Endpoints Monitored
+
+{% for endpoint in endpoints_seen %}
+- `{{ endpoint }}`{% if availability_by_endpoint[endpoint] is defined %} — {{ format_pct(availability_by_endpoint[endpoint]) }} available{% endif %}
+{% endfor %}
+
+---
+
+## Volume Analysis
+
+### Overall Volume
+
+- **Total Events:** {{ total_events }}
+- **Unique URLs Collected:** {{ unique_urls }}
+{% if volume_change_pct is not none %}
+- **Week-over-Week Change:** {{ "%+.1f"|format(volume_change_pct) }}%
+{% endif %}
+
+### Events by Endpoint
+
+{% if events_by_endpoint %}
+| Endpoint | Count | Share |
+|----------|-------|-------|
+{% for endpoint, count in events_by_endpoint.items() %}
+| {{ endpoint }} | {{ count }} | {{ format_pct(count / total_events if total_events > 0 else 0) }} |
+{% endfor %}
+{% else %}
+_No events collected during this period._
+{% endif %}
+
+### Events Over Time
+
+{% if events_over_time %}
+| Date | Events |
+|------|--------|
+{% for date, count in events_over_time %}
+| {{ date }} | {{ count }} |
+{% endfor %}
+{% else %}
+_No time-series data available._
+{% endif %}
+
+---
+
+## Payload Characteristics
+
+{% if payload_size_p50 is not none %}
+| Metric | Value |
+|--------|-------|
+| Median Payload Size | {{ format_bytes(payload_size_p50) }} |
+| p95 Payload Size | {{ format_bytes(payload_size_p95) }} |
+{% else %}
+_No payload size data available._
+{% endif %}
+
+---
+
+## Methodology Notes
+
+This report is a **deterministic transform** of raw collection data stored in `observatory.sqlite` for the specified week. All metrics are observable properties of the collection process and stored payloads; no external enrichment or inference is applied.
+
+### Epistemic Constraints
+
+- **Availability** measures successful HTTP requests, not platform uptime.
+- **Volume changes** may reflect collection configuration changes, not platform activity changes.
+- **Anomalies** are risk signals for investigation, not verdicts.
+
+### Failure Modes
+
+- If the collector was not running during this period, all metrics will be zero or unavailable.
+- If API endpoints changed structure, payload size distributions may reflect schema changes rather than content changes.
+- Week-over-week comparisons require at least two weeks of data.
+
+### Reproducibility
+
+To regenerate this report:
+
+```bash
+python -m reports.run_weekly --week {{ week_id }}
+```
+
+---
+
+**Report ID:** `{{ week_id }}`
+**Observatory Version:** 0.1.0
+**For questions or feedback:** See repository README.md
